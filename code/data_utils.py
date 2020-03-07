@@ -46,8 +46,7 @@ def load_data():
 
     # preprocess for label
     train_y, test_y = one_hot_preprocess_y(train_y, test_y)
-    # print(train_x.shape)
-    # print(train_y.shape, test_y.shape)
+
     return train_x, train_y, test_x, test_y
 
 
@@ -64,9 +63,7 @@ def load_events(filename):
     value_mapping = {'ON': 0, 'OFF': 1, 'ABSENT': 2, 'PRESENT': 3, 'OPEN': 4, 'CLOSE': 5}
     df['SensorID'] = df['SensorID'].map(sensor_mapping)
     df['Sensorvalue'] = df['Sensorvalue'].map(value_mapping)
-    # print(df.shape)
-    # df = df[(True ^ df['Sensorvalue'].isin([1, 2, 5]))]
-    # print(df.shape)
+
     x = df['SensorID'].values
     activity = df['ActivityID'].values
     resident = df['ResidentID'].values
@@ -76,6 +73,7 @@ def load_events(filename):
 
 def one_hot_preprocess(data):
     print('preprocessing ...')
+
     # transform the train data into one hot data
     onehot = OneHotEncoder(sparse=False)
     data = np.array(data).reshape((-1, 1))
@@ -92,7 +90,6 @@ def one_hot_preprocess_y(train, test):
         if i == 0:
             y_list = train[i]
             indices.append(0)
-            # indices.append(train[i].shape[0])
         else:
             y_list = np.vstack((y_list, train[i]))
         indices.append(start)
@@ -124,3 +121,22 @@ def label_transform(y):
     output = output.astype(np.float32)
 
     return output
+
+
+def data_slice(x, sample_length):
+    n_instances = x.shape[0]
+    x = front_padding(x, sample_length)
+    output = []
+    for i in range(n_instances):
+        instance = x[i:i+sample_length]
+        output.append(instance)
+    output = np.array(output, dtype=np.float32)
+    # output.astype(np.float32)
+    return output
+
+
+def front_padding(data, sample_length):
+    # padding the input data to fit the training method
+    padding_matrix = np.zeros([sample_length - 1, data.shape[1]])
+    added_data = np.vstack((padding_matrix, data))
+    return added_data

@@ -1,16 +1,18 @@
 import torch
 import time
 from torch import nn, optim
-import numpy as np
 from network import Net
 from data_utils import load_data
+from eval import evaluation
+from data_utils import data_slice
 
 
 # Hyper parameters
+BATCH_SIZE = 32
 SAMPLE_LENGTH = 8  # this parameters shouldn't be modified.
 NUM_MULTI_LABEL = 15 + 2
-LEARNING_RATE = 1e-3
-L2_WEIGHT = 1e-2
+LEARNING_RATE = 0.01
+L2_WEIGHT = 1e-3
 N_EPOCHS = 10
 
 
@@ -33,46 +35,53 @@ def train(data):
         running_loss = 0
 
         for i in range(len(train_x)):
-
-            x = torch.from_numpy(data_slice(train_x[i])).to(device)
-            y = torch.from_numpy(train_y[i]).to(device)
-            # print(train_y[i])
-
-            for j in range(x.shape[0]):
+            length = len(train_x[i])
+            start = 0
+            print(length)
+            while start + BATCH_SIZE < length:
                 optimizer.zero_grad()
-                outputs = model(x[j].view(8, 37))
-                loss = loss_fn(outputs, y[j])
+                x = data_slice(train_x[i][start: start + BATCH_SIZE], SAMPLE_LENGTH)
+                y = train_y[i][start: start + BATCH_SIZE]
+                x = torch.from_numpy(x).to(device)
+                y = torch.from_numpy(y).to(device)
+                print(x.shape)
+                outputs = model(x)
+                loss = loss_fn(outputs, y)
                 loss.backward()
                 optimizer.step()
+                start += BATCH_SIZE
                 running_loss += loss.item()
 
-            print('epoch {}, file {} loss: {:.4f}'.format(epoch + 1, i + 1, running_loss / x.shape[0]))
+            print('epoch {}, file {} loss: {:.4f}'.format(epoch + 1, i + 1, running_loss / start))
 
-    checkpoint = {'model': model,
-                  'state_dict': model.state_dict(),
-                  'optimizer': optimizer.state_dict()}
+            # x = torch.from_numpy(data_slice(train_x[i], SAMPLE_LENGTH)).to(device)
+            # y = torch.from_numpy(train_y[i]).to(device)
+            # print(train_y[i])
 
-    torch.save(checkpoint, '../weights/parameters' + time.strftime('%Y-%m-%d_%H:%M:%S',
-                                                                   time.localtime(time.time())) + '.pkl')
+            # for j in range(x.shape[0]):
+            #
+            #     outputs = model(x[j].view(8, 37))
+            #     loss = loss_fn(outputs, y[j])
+            #     optimizer.zero_grad()
+            #     loss.backward()
+            #     optimizer.step()
+            #     running_loss += loss.item()
+            #
+            # print('epoch {}, file {} loss: {:.4f}'.format(epoch + 1, i + 1, running_loss / x.shape[0]))
 
+        # test code
+        # inputs = torch.from_numpy(data_slice(train_x[0], SAMPLE_LENGTH)).to(device)
+        # labels = train_y[0]
+        # label = labels[100]
+        # output = model(inputs[100].view(8, 37))
+        #
+        # print(list(output.cpu().detach().numpy()))
+        # print(label)
+        ##############################
+        evaluation(model, SAMPLE_LENGTH, train_x, train_y)
 
-def front_padding(data, sample_length):
-    # padding the input data to fit the training method
-    padding_matrix = np.zeros([sample_length - 1, data.shape[1]])
-    added_data = np.vstack((padding_matrix, data))
-    return added_data
-
-
-def data_slice(x):
-    n_instances = x.shape[0]
-    x = front_padding(x, SAMPLE_LENGTH)
-    output = []
-    for i in range(n_instances):
-        instance = x[i:i+SAMPLE_LENGTH]
-        output.append(instance)
-    output = np.array(output, dtype=np.float32)
-    # output.astype(np.float32)
-    return output
+    torch.save(model, '../weights/parameters' + time.strftime('%Y-%m-%d_%H:%M:%S',
+                                                              time.localtime(time.time())) + '.pkl')
 
 
 data = load_data()
