@@ -3,7 +3,7 @@ from torch.nn.functional import relu
 
 # computation graph
 class Net(nn.Module):
-    def __init__(self, n_label):
+    def __init__(self, n_resident, n_activity):
         super().__init__()
         self.conv1 = nn.Conv1d(in_channels=1, out_channels=16, kernel_size=3, padding=1)  # input is 37 dimenssion
         self.maxpool1 = nn.MaxPool1d(kernel_size=2, stride=1)  # output is 36 dims
@@ -12,12 +12,14 @@ class Net(nn.Module):
         self.conv3 = nn.Conv1d(in_channels=32, out_channels=64, kernel_size=3, padding=1)
         self.maxpool3 = nn.MaxPool1d(kernel_size=2, stride=2)  # output is 9 dims
         self.fc1 = nn.Linear(in_features=64 * 9, out_features=256)
-        self.fc2 = nn.Linear(in_features=256, out_features=n_label)
+        self.fc_r = nn.Linear(in_features=256, out_features=n_resident)
+        self.fc_a = nn.Linear(in_features=256, out_features=n_activity)
         # self.relu = nn.ReLU
-        self.sigmoid = nn.Sigmoid()
+        # self.sigmoid = nn.Sigmoid()
         self.conv1_1 = nn.Conv1d(in_channels=16, out_channels=16, kernel_size=3, padding=1)
         self.conv2_1 = nn.Conv1d(in_channels=32, out_channels=32, kernel_size=3, padding=1)
         self.conv3_1 = nn.Conv1d(in_channels=64, out_channels=64, kernel_size=3, padding=1)
+        # self.softmax = nn.Softmax(dim=-1)
 
     def forward(self, x):
         # [8, 37]
@@ -43,13 +45,18 @@ class Net(nn.Module):
 
         # convolution 3 [33-3+1=31, 64]
         y = self.residual_3(relu(self.conv3(layer2_1))) + self.residual_3(relu(self.conv3(layer2_2)))
+        print(y.shape)
         y = self.maxpool3(y)
+
         y = y.view(-1)
+        print(y.shape)
 
-        y = relu(self.fc1(y))
-        y = self.sigmoid(self.fc2(y))
+        resident = relu(self.fc1(y))
+        activity = relu(self.fc1(y))
+        resident = self.fc_r(resident)
+        activity = self.fc_a(activity)
 
-        return y
+        return resident, activity
 
     def residual_1(self, x):
         output = self.conv1_1(x)

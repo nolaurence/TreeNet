@@ -1,5 +1,5 @@
 import torch
-from preprocess import data_slice
+from train import data_slice
 
 
 def evaluation(net, sample_length, x, y):
