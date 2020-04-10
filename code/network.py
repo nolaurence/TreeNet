@@ -1,7 +1,6 @@
 from torch import nn
 from torch.nn.functional import relu
 
-
 # computation graph
 class Net(nn.Module):
     def __init__(self, n_label):

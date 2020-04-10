@@ -2,9 +2,8 @@ import torch
 import time
 from torch import nn, optim
 from network import Net
-from data_utils import load_data
+from preprocess import load_data, data_slice
 from eval import evaluation
-from data_utils import data_slice
 
 
 # Hyper parameters
