@@ -1,5 +1,6 @@
 直接运行code中的train.py，eval暂时无法运行
 
+需要的python版本：3.7
 运行需要的扩展包：
 
 Numpy，
