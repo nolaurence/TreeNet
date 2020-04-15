@@ -1,6 +1,7 @@
 import pandas as pd
 from sklearn.preprocessing import OneHotEncoder
 import numpy as np
+from torch.utils import data as Data
 
 def load_data(sample_len):
     n_file = 26
@@ -20,7 +21,64 @@ def load_data(sample_len):
 
         x_indices.append(start)
         x_list.extend(x)
-        train_y.append(y)  # [resident, activity]
+        train_y.extend(y)  # [resident, activity]
+
+    # test_y = []
+    # for i in range(train_indices, n_file):
+    #     x, y = load_events('P' + str(i + 1) + '.xlsx')
+    #     # x = one_hot_preprocess(x)
+    #     index = len(x)
+    #     start += index
+    #     x_indices.append(start)
+    #     x_list.extend(x)
+    #
+    #     test_y.append(y)  # [resident, activity]
+
+    # processing on x
+    x_list = one_hot_preprocess(x_list)
+    train_x = front_padding(x_list, sample_len)
+    train_x = data_slice(train_x, sample_len)
+    # train_y = train_y[0: x_indices[train_indices]]
+    # train_x = []
+    # test_x = []
+    # for i in range(train_indices):
+    #     x = x_list[x_indices[i]: x_indices[i + 1]]
+    #     x = front_padding(x, sample_len)
+    #     x = data_slice(x, sample_len)
+    #     train_x.append(x)
+    # for i in range(train_indices, n_file):
+    #     x = x_list[x_indices[i]: x_indices[i + 1]]
+    #     x = front_padding(x, sample_len)
+    #     x = data_slice(x, sample_len)
+    #     test_x.append(x)
+    # print(train_y.shape)
+
+    # preprocess for label
+    train_y = label_preprocess(train_y)
+    # test_y = label_preprocess(test_y)
+
+    return train_x, train_y
+
+
+def load_test(sample_len):
+    n_file = 26
+    train_ratio = 0.7
+    train_indices = int(n_file * train_ratio)
+    # train_y = []
+    x_indices = []
+    x_list = []
+    start = 0
+    x_indices.append(start)
+    print('loading raw data ...')
+    for i in range(train_indices):
+        x, y = load_events('P' + str(i + 1) + '.xlsx')
+        # x = one_hot_preprocess(x)
+        index = len(x)
+        start += index
+
+        x_indices.append(start)
+        x_list.extend(x)
+        # train_y.extend(y)  # [resident, activity]
 
     test_y = []
     for i in range(train_indices, n_file):
@@ -31,29 +89,25 @@ def load_data(sample_len):
         x_indices.append(start)
         x_list.extend(x)
 
-        test_y.append(y)  # [resident, activity]
+        test_y.extend(y)  # [resident, activity]
 
     # processing on x
     x_list = one_hot_preprocess(x_list)
     train_x = []
-    test_x = []
-    for i in range(train_indices):
-        x = x_list[x_indices[i]: x_indices[i + 1]]
-        x = front_padding(x, sample_len)
-        x = data_slice(x, sample_len)
-        train_x.append(x)
-    for i in range(train_indices, n_file):
-        x = x_list[x_indices[i]: x_indices[i + 1]]
-        x = front_padding(x, sample_len)
-        x = data_slice(x, sample_len)
-        test_x.append(x)
-    # print(train_y.shape)
+    test_x = x_list[x_indices[train_indices]:]
+    test_x = front_padding(test_x, sample_len)
+    test_x = data_slice(test_x, sample_len)
+    # for i in range(train_indices):
+    #     x = x_list[x_indices[i]: x_indices[i + 1]]
+    #     x = front_padding(x, sample_len)
+    #     x = data_slice(x, sample_len)
+    #     train_x.append(x)
 
     # preprocess for label
-    train_y = label_preprocess(train_y)
+    # train_y = label_preprocess(train_y)
     test_y = label_preprocess(test_y)
 
-    return train_x, train_y, test_x, test_y
+    return test_x, test_y
 
 
 def load_events(filename):
@@ -108,3 +162,28 @@ def data_slice(x, sample_length):
 def label_preprocess(input):
     input = np.array(input)
     return input - 1
+
+class trainset(Data.Dataset):
+    def __init__(self, sample_length, loader=load_data):
+        self.x, self.y = loader(sample_length)
+
+    def __getitem__(self, item):
+        data = self.x[item]
+        label = self.y[item]
+        return data, label
+
+    def __len__(self):
+        return len(self.x)
+
+
+class testset(Data.Dataset):
+    def __init__(self, sample_length, loader=load_test):
+        self.x, self.y = loader(sample_length)
+
+    def __getitem__(self, item):
+        data = self.x[item]
+        label = self.y[item]
+        return data, label
+
+    def __len__(self):
+        return len(self.x)
