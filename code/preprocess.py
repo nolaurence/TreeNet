@@ -40,10 +40,12 @@ def load_data(sample_len):
     for i in range(train_indices):
         x = x_list[x_indices[i]: x_indices[i + 1]]
         x = front_padding(x, sample_len)
+        x = data_slice(x, sample_len)
         train_x.append(x)
     for i in range(train_indices, n_file):
         x = x_list[x_indices[i]: x_indices[i + 1]]
         x = front_padding(x, sample_len)
+        x = data_slice(x, sample_len)
         test_x.append(x)
     # print(train_y.shape)
 
@@ -91,6 +93,17 @@ def front_padding(data, sample_length):
     added_data = np.vstack((padding_matrix, data))
     return added_data
 
+
+def data_slice(x, sample_length):
+    n_instances = x.shape[0] - (sample_length - 1)
+    # x = front_padding(x, sample_length)
+    output = []
+    for i in range(n_instances):
+        instance = x[i:i+sample_length]
+        output.append(instance)
+    nice = np.array(output, dtype=np.float32)
+    # output.astype(np.float32)
+    return nice
 
 def label_preprocess(input):
     input = np.array(input)
