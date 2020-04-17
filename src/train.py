@@ -4,8 +4,8 @@ from torch import nn, optim
 from torch.utils import data as Data
 # import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
-from network import Net
-from preprocess import trainset
+from .network import Net
+from .preprocess import trainset
 
 
 # Hyper parameters
@@ -16,6 +16,9 @@ NUM_ACTIVITY = 15
 LEARNING_RATE = 1e-6
 L2_WEIGHT = 1e-5
 N_EPOCHS = 10
+
+LR = 1e-5
+L2 = 1e-3
 
 
 def train():
@@ -74,7 +77,7 @@ def train():
 
     modelA = Net(NUM_ACTIVITY, BATCH_SIZE)
     modelA.to(device)
-    optimizer_A = optim.Adam(modelR.parameters(), lr=LEARNING_RATE, weight_decay=L2_WEIGHT)
+    optimizer_A = optim.Adam(modelR.parameters(), lr=LR, weight_decay=L2)
 
     # training stage for activity
     for epoch in range(N_EPOCHS):
