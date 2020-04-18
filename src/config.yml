@@ -1,0 +1,17 @@
+# config.yml
+authorName: default
+experimentName: TreeNet
+trialConcurrency: 2
+maxExecDuration: 2h
+maxTrialNum: 50
+trainingServicePlatform: local
+searchSpacePath: search_space.json
+useAnnotation: false
+tuner:
+  builtinTunerName: TPE
+  classArgs:
+    optimize_mode: minimize
+trial:
+  command: python train_nni.py
+  codeDir: .
+  gpuNum: 1

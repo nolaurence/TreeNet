@@ -1,0 +1,11 @@
+{
+  "lr": {
+    "_type": "uniform",
+    "_value":  [1e-6, 1e-2]},
+  "l2": {
+    "_type":  "uniform",
+    "_value":  [1e-5, 1e-3]},
+  "batch_size": {
+    "_type":  "choice",
+    "_value": [64, 128, 256]}
+}
