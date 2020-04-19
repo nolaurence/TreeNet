@@ -1,39 +1,46 @@
 import torch
-from train import data_slice
 
-
-def evaluation(net, sample_length, x, y):
+def evaluation(net1, net2, test_loader1, test_loader2):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print('working on evaluation ...')
 
+    # eval residents
+    correct = 0
+    total = 0
     with torch.no_grad():
-        for i in range(len(x)):
-            inputs = torch.from_numpy(data_slice(x[i], sample_length)).to(device)
-            labels = y[i]
-            resident_precision = 0
-            activity_precision = 0
+        for i, data in enumerate(test_loader1):
+            inputs, labels = data
+            labels = labels[:, 0]
+            if torch.cuda.is_available():
+                outputs = net1(inputs.cuda())
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels.cuda()).sum().item()
+            else:
+                outputs = net1(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+    acc = correct / total
+    print('resident precision: {:.4f}'.format(acc))
 
-            n_right_resident = 0
-            n_right_activity = 0
-            for j in range(inputs.shape[0]):
-                outputs = net(inputs[j].view(8, 37))
-                outputs = outputs.cpu().numpy()
+    # eval activity
+    correct = 0
+    total = 0
+    with torch.no_grad():
+        for i, data in enumerate(test_loader2):
+            inputs, labels = data
+            labels = labels[:, 1]
+            if torch.cuda.is_available():
+                outputs = net2(inputs.cuda())
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels.cuda()).sum().item()
+            else:
+                outputs = net2(inputs)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+    acc = correct / total
+    print('activity precision: {:.4f}'.format(acc))
 
-                resident = list(outputs[:2])
-                activity = list(outputs[2:])
-                resident_gt = list(labels[j][:2])
-                activity_gt = list(labels[j][2:])
-                sorted_resident, sorted_activity = resident, activity
-                sorted_resident.sort()
-                sorted_activity.sort()
-
-                if resident.index(sorted_resident[-1]) == resident_gt.index(1.0):
-                    n_right_resident += 1
-                if activity.index(sorted_activity[-1]) == activity_gt.index(1.0):
-                    n_right_activity += 1
-            resident_precision += n_right_resident / inputs.shape[0]
-            activity_precision += n_right_activity / inputs.shape[0]
-            # print("\nfile {}: resident's precision: {:.2f} %, activity's precision: {:.2f} %".format(
-            #     i + 1, n_right_resident / inputs.shape[0]*100, n_right_activity / inputs.shape[0]*100))
-        print("\nresident's precision: {:.2f} %, activity's precision: {:.2f} %".format(
-            resident_precision / len(x) * 100, activity_precision / len(x) * 100))

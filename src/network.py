@@ -55,8 +55,7 @@ class Net(nn.Module):
         # y = self.maxpool3(y)
         # print(y.shape)
 
-        y = y.view(self.batch_size, -1)
-
+        y = y.view(y.shape[0], -1)
 
         y = relu(self.fc1(y))
         y = self.fc2(y)

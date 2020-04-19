@@ -5,27 +5,29 @@ from torch.utils import data as Data
 # import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
 from network import Net
-from preprocess import trainset
+from preprocess import trainset, testset
+from eval import evaluation
 
 
 # Hyper parameters
-BATCH_SIZE = 128
+BATCH_SIZE = 256
 SAMPLE_LENGTH = 8  # 这个参数不能改
 NUM_RESIDENT = 2
 NUM_ACTIVITY = 15
-LEARNING_RATE = 1e-6
-L2_WEIGHT = 1e-5
+LEARNING_RATE = 0.0035961683699580957
+L2_WEIGHT = 0.0001328492781537454
 N_EPOCHS = 10
 
-LR = 1e-5
-L2 = 1e-3
+LR = 0.005
+L2 = 0.0001
+BS = 256
 
 
 def train():
     # determine the device to run the model
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
-    # initialize tensorboard
+    # tensorboard initialization
     writer = SummaryWriter('../runs')
 
     # load data
@@ -40,9 +42,11 @@ def train():
     loss_fn = nn.CrossEntropyLoss()
 
     # training stage for resident
+    idx = 0
     for epoch in range(N_EPOCHS):
 
         for i, data in enumerate(train_loader):
+            idx += 1
             optimizer.zero_grad()  # reset the optimizer
             inputs, labels = data
             if epoch == 0 and i == 0:
@@ -66,7 +70,7 @@ def train():
             optimizer.step()  # weights update
 
             # loss visualization
-            writer.add_scalar('resident loss for epoch ' + str(epoch + 1), loss.item(), global_step=i + 1)
+            writer.add_scalar('resident loss', loss.item(), global_step=idx)
 
             print('epoch {} batch {} resident loss: {:.4f}'.format(epoch + 1, i, loss.item()))
 
@@ -75,18 +79,26 @@ def train():
     torch.save(modelR, '../weights/parameters' + time.strftime('modelR-%Y-%m-%d_%H-%M-%S',
                                                                time.localtime(time.time())) + '.pkl')
 
-    modelA = Net(NUM_ACTIVITY, BATCH_SIZE)
+    modelA = Net(NUM_ACTIVITY, BS)
     modelA.to(device)
-    optimizer_A = optim.Adam(modelR.parameters(), lr=LR, weight_decay=L2)
+    optimizer_A = optim.Adam(modelA.parameters(), lr=LR, weight_decay=L2)
+    train_loader2 = Data.DataLoader(dataset=train_data, batch_size=BS, shuffle=False, num_workers=0)
 
+    # nni code
+    # best_loss = 0
     # training stage for activity
+    print('training activity ...')
+    idx = 0
     for epoch in range(N_EPOCHS):
 
-        for i, data in enumerate(train_loader):
-            optimizer.zero_grad()
+        # nni code
+        # running_loss = 0
+        for i, data in enumerate(train_loader2):
+            idx += 1
+            optimizer_A.zero_grad()
             inputs, labels = data
             # jump off the last batch
-            if inputs.shape[0] < BATCH_SIZE:
+            if inputs.shape[0] < BS:
                 continue
 
             # estimate whether GPU exists
@@ -100,13 +112,24 @@ def train():
             loss.backward()  # back propagation
             optimizer_A.step()  # weights update
 
-            # loss visualization
-            writer.add_scalar('activity loss for epoch ' + str(epoch + 1), loss.item(), global_step=i + 1)
+            # nni code
+            # running_loss += loss.item()
+            # idx += 1
 
-            print('epoch {}, batch {} activity loss: {:.4f}'.format(epoch + 1, i , loss.item()))
+            # loss visualization
+            writer.add_scalar('activity loss', loss.item(), global_step=idx)
+
+            print('epoch {}, batch {} activity loss: {:.4f}'.format(epoch + 1, i, loss.item()))
 
     torch.save(modelR, '../weights/parameters' + time.strftime('modelA-%Y-%m-%d_%H-%M-%S',
                                                                time.localtime(time.time())) + '.pkl')
     print('Done.')
+
+    # evaluation
+    test_data = testset(SAMPLE_LENGTH)
+    test_loader1 = Data.DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+    test_loader2 = Data.DataLoader(dataset=test_data, batch_size=BS, shuffle=False, num_workers=0)
+    evaluation(modelR, modelA, test_loader1, test_loader2)
+
 
 train()

@@ -1,9 +1,9 @@
 # config.yml
 authorName: default
 experimentName: TreeNet
-trialConcurrency: 2
-maxExecDuration: 2h
-maxTrialNum: 50
+trialConcurrency: 4
+maxExecDuration: 4h
+maxTrialNum: 200
 trainingServicePlatform: local
 searchSpacePath: search_space.json
 useAnnotation: false
