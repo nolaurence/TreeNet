@@ -28,7 +28,9 @@ L2 = 1e-3
 
 def train():
     # determine the device to run the model
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = 'cpu'
+    use_gpu = False
 
     # initialize tensorboard
     writer = SummaryWriter('../runs')
@@ -50,12 +52,12 @@ def train():
         running_loss = 0
         batches = 0
 
-
         for i, data in enumerate(train_loader):
+
             optimizer.zero_grad()  # reset the optimizer
             inputs, labels = data
             if epoch == 0 and i == 0:
-                if torch.cuda.is_available():
+                if torch.cuda.is_available() and use_gpu:
                     writer.add_graph(modelR, input_to_model=inputs.cuda(), verbose=False)
                 else:
                     writer.add_graph(modelR, input_to_model=inputs, verbose=False)
@@ -64,7 +66,7 @@ def train():
             if inputs.shape[0] < BATCH_SIZE:
                 continue
             # estimate whether GPU exists
-            if torch.cuda.is_available():
+            if torch.cuda.is_available() and use_gpu:
                 outputs = modelR(inputs.cuda())
                 loss = loss_fn(outputs, labels[:, 0].cuda())
             else:

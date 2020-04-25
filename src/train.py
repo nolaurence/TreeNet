@@ -25,7 +25,9 @@ BS = 256
 
 def train():
     # determine the device to run the model
-    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    device = 'cpu'
+    use_gpu = False
 
     # tensorboard initialization
     writer = SummaryWriter('../runs')
@@ -50,7 +52,7 @@ def train():
             optimizer.zero_grad()  # reset the optimizer
             inputs, labels = data
             if epoch == 0 and i == 0:
-                if torch.cuda.is_available():
+                if torch.cuda.is_available() and use_gpu:
                     writer.add_graph(modelR, input_to_model=inputs.cuda(), verbose=False)
                 else:
                     writer.add_graph(modelR, input_to_model=inputs, verbose=False)
@@ -59,7 +61,7 @@ def train():
             if inputs.shape[0] < BATCH_SIZE:
                 continue
             # estimate whether GPU exists
-            if torch.cuda.is_available():
+            if torch.cuda.is_available() and use_gpu:
                 outputs = modelR(inputs.cuda())
                 loss = loss_fn(outputs, labels[:, 0].cuda())
             else:
@@ -102,7 +104,7 @@ def train():
                 continue
 
             # estimate whether GPU exists
-            if torch.cuda.is_available():
+            if torch.cuda.is_available() and use_gpu:
                 outputs = modelA(inputs.cuda())
                 loss = loss_fn(outputs, labels[:, 1].cuda())
             else:
@@ -126,10 +128,10 @@ def train():
     print('Done.')
 
     # evaluation
-    test_data = testset(SAMPLE_LENGTH)
-    test_loader1 = Data.DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
-    test_loader2 = Data.DataLoader(dataset=test_data, batch_size=BS, shuffle=False, num_workers=0)
-    evaluation(modelR, modelA, test_loader1, test_loader2)
+    # test_data = testset(SAMPLE_LENGTH)
+    # test_loader1 = Data.DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+    # test_loader2 = Data.DataLoader(dataset=test_data, batch_size=BS, shuffle=False, num_workers=0)
+    evaluation(modelR, modelA, train_loader, train_loader2)
 
 
 train()
