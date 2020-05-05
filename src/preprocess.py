@@ -81,7 +81,7 @@ def load_test(sample_len):
         # train_y.extend(y)  # [resident, activity]
 
     test_y = []
-    for i in range(train_indices, n_file):
+    for i in range(train_indices, n_file + 1):
         x, y = load_events('P' + str(i + 1) + '.xlsx')
         # x = one_hot_preprocess(x)
         index = len(x)
@@ -123,6 +123,8 @@ def load_events(filename):
     value_mapping = {'ON': 0, 'OFF': 1, 'ABSENT': 2, 'PRESENT': 3, 'OPEN': 4, 'CLOSE': 5}
     df['SensorID'] = df['SensorID'].map(sensor_mapping)
     df['Sensorvalue'] = df['Sensorvalue'].map(value_mapping)
+
+    df = df[True ^ df['Sensorvalue'].isin([1, 2, 5])]
 
     x = df['SensorID'].values
     activity = df['ActivityID'].values

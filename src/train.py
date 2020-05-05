@@ -4,7 +4,7 @@ from torch import nn, optim
 from torch.utils import data as Data
 # import matplotlib.pyplot as plt
 from torch.utils.tensorboard import SummaryWriter
-from network import Net
+from network3 import Net
 from preprocess import trainset, testset
 from eval import evaluation
 
@@ -25,9 +25,9 @@ BS = 256
 
 def train():
     # determine the device to run the model
-    # device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-    device = 'cpu'
-    use_gpu = False
+    device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+    # device = 'cpu'
+    use_gpu = True
 
     # tensorboard initialization
     writer = SummaryWriter('../runs')
@@ -128,9 +128,9 @@ def train():
     print('Done.')
 
     # evaluation
-    # test_data = testset(SAMPLE_LENGTH)
-    # test_loader1 = Data.DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
-    # test_loader2 = Data.DataLoader(dataset=test_data, batch_size=BS, shuffle=False, num_workers=0)
+    test_data = testset(SAMPLE_LENGTH)
+    test_loader1 = Data.DataLoader(dataset=test_data, batch_size=BATCH_SIZE, shuffle=False, num_workers=0)
+    test_loader2 = Data.DataLoader(dataset=test_data, batch_size=BS, shuffle=False, num_workers=0)
     evaluation(modelR, modelA, train_loader, train_loader2)
 
 

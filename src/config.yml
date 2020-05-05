@@ -1,6 +1,6 @@
 # config.yml
 authorName: default
-experimentName: TreeNet
+experimentName: RNN
 trialConcurrency: 4
 maxExecDuration: 4h
 maxTrialNum: 200
@@ -10,8 +10,8 @@ useAnnotation: false
 tuner:
   builtinTunerName: TPE
   classArgs:
-    optimize_mode: minimize
+    optimize_mode: maximize
 trial:
-  command: python train_nni.py
+  command: python compare.py
   codeDir: .
   gpuNum: 1
